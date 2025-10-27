@@ -145,13 +145,11 @@ export const generateVoiceSample = async (voiceId: string, text: string, languag
      try {
         const payload = {
             text: text,
-            language: language,
-            voice_settings: {},
+            voice_id: voiceId,
             model: "base",
             temperature: 0.7,
-            max_duration: "30",
         };
-        const response = await apiFetch(`/v1/voices/${voiceId}/sample`, {
+        const response = await apiFetch(`/v1/tts`, {
             method: 'POST',
             body: JSON.stringify(payload),
         });

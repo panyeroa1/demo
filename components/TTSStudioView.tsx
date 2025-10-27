@@ -9,6 +9,13 @@ import { VOICE_PREVIEW_CONFIG } from '../constants';
 type GenerationStatus = 'idle' | 'generating' | 'uploading' | 'success' | 'error';
 type ActiveTab = 'generator' | 'history';
 
+interface TtsTelemetry {
+    tokensUsed: number;
+    wps: number;
+    cps: number;
+    energy: string;
+}
+
 const TabButton: React.FC<{
     label: string;
     icon: React.FC<React.SVGProps<SVGSVGElement>>;
@@ -59,6 +66,8 @@ const TTSStudioView: React.FC = () => {
     const [selectedVoice, setSelectedVoice] = useState<string>('');
 
     const [activeTab, setActiveTab] = useState<ActiveTab>('generator');
+    const [telemetry, setTelemetry] = useState<TtsTelemetry | null>(null);
+
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -105,6 +114,9 @@ const TTSStudioView: React.FC = () => {
         setStatus('generating');
         setError(null);
         setGeneratedAudio(null);
+        setTelemetry(null);
+        
+        const startTime = performance.now();
         
         try {
             const voice = voices.find(v => v.id === selectedVoice);
@@ -115,12 +127,30 @@ const TTSStudioView: React.FC = () => {
 
             const audioBlob = await dataService.generateVoiceSample(selectedVoice, inputText, config.langCode);
 
+            const endTime = performance.now();
+
             setStatus('uploading');
             const publicUrl = await uploadTtsAudio(audioBlob);
 
             const newGeneration = await dataService.saveTtsGeneration({
                 input_text: inputText,
                 audio_url: publicUrl,
+            });
+
+            const durationSeconds = (endTime - startTime) / 1000;
+            const characters = inputText.length;
+            const words = inputText.trim().split(/\s+/).filter(Boolean).length;
+            
+            const wps = durationSeconds > 0 ? Math.round(words / durationSeconds) : 0;
+            const cps = durationSeconds > 0 ? Math.round(characters / durationSeconds) : 0;
+            const energy = ((characters / 1000) * 0.005).toFixed(4);
+            const tokensUsed = Math.round(characters / 3.8);
+
+            setTelemetry({
+                tokensUsed,
+                wps,
+                cps,
+                energy: `${energy} kWh`
             });
 
             setGeneratedAudio({ url: publicUrl, blob: audioBlob });
@@ -194,6 +224,14 @@ const TTSStudioView: React.FC = () => {
                             <DownloadIcon className="w-6 h-6" />
                         </a>
                     </div>
+                    {telemetry && (
+                        <div className="mt-3 pt-2 border-t border-white/10 flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px] text-eburon-fg/50 font-mono">
+                            <span>Tokens: {telemetry.tokensUsed}</span>
+                            <span>Energy: {telemetry.energy}</span>
+                            <span>WPS: {telemetry.wps}</span>
+                            <span>CPS: {telemetry.cps}</span>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
