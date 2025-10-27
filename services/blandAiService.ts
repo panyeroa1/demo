@@ -227,3 +227,31 @@ export const startAylaCall = async (phoneNumber: string): Promise<{ success: boo
         return { success: false, message: (error as Error).message || EBURON_ERROR_MESSAGE };
     }
 };
+
+export const cloneVoice = async (name: string, audioBlob: Blob): Promise<{ success: boolean; voice_id?: string; message?: string }> => {
+    try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('audio_samples', audioBlob, 'recording.wav');
+
+        const response = await fetch(`${API_BASE_URL}/v1/voices/clone`, {
+            method: 'POST',
+            headers: {
+                'authorization': BLAND_API_KEY,
+                'encrypted_key': BLAND_ENCRYPTED_KEY,
+            },
+            body: formData,
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || `API Error: ${response.status} ${response.statusText}`);
+        }
+
+        return { success: true, voice_id: data.voice_id };
+    } catch (error) {
+        console.error("Bland AI Service Error (cloneVoice):", error);
+        return { success: false, message: (error as Error).message || EBURON_ERROR_MESSAGE };
+    }
+};

@@ -46,8 +46,10 @@ async function seedInitialData() {
 
 export async function initializeDataLayer(): Promise<void> {
   try {
+    // Ping a known-good table to check for Supabase connection.
+    // The 'agents' table was causing schema errors, so we check 'voices' instead.
     const { error } = await supabaseService.supabase
-      .from('agents')
+      .from('voices')
       .select('id', { count: 'exact', head: true });
 
     if (error && (error.message.includes('network error') || error.message.includes('Failed to fetch'))) {
@@ -66,50 +68,21 @@ export async function initializeDataLayer(): Promise<void> {
 }
 
 // --- AGENTS ---
+// Per user request, agent management is now local-only using IndexedDB to prevent Supabase schema conflicts.
 export async function getAgents(): Promise<Agent[]> {
-    if (dbMode === 'supabase') {
-        try {
-            return await supabaseService.getAgentsFromSupabase();
-        } catch (error) {
-            console.error("Supabase failed to get agents, falling back to IDB", (error as Error).message);
-            dbMode = 'indexedDB';
-            return idbService.getAgentsFromIdb();
-        }
-    }
     return idbService.getAgentsFromIdb();
 }
 
 export async function upsertAgents(agents: Agent[]): Promise<void> {
-    await idbService.upsertAgentsToIdb(agents); // Always update local first for speed
-    if (dbMode === 'supabase') {
-        try {
-            await supabaseService.upsertAgentsToSupabase(agents);
-        } catch (error) {
-            console.error("Supabase failed to upsert agents", (error as Error).message);
-        }
-    }
+    await idbService.upsertAgentsToIdb(agents);
 }
 
 export async function updateAgent(agent: Agent): Promise<void> {
      await idbService.upsertAgentsToIdb([agent]);
-     if (dbMode === 'supabase') {
-        try {
-            await supabaseService.updateAgentInSupabase(agent);
-        } catch (error) {
-             console.error("Supabase failed to update agent", (error as Error).message);
-        }
-     }
 }
 
 export async function deleteAgent(agentId: string): Promise<void> {
     await idbService.deleteAgentFromIdb(agentId);
-    if (dbMode === 'supabase') {
-        try {
-            await supabaseService.deleteAgentFromSupabase(agentId);
-        } catch (error) {
-            console.error("Supabase failed to delete agent", (error as Error).message);
-        }
-    }
 }
 
 
@@ -138,6 +111,7 @@ export async function upsertVoices(voices: Voice[]): Promise<void> {
 
 export const generateVoiceSample = blandAiService.generateVoiceSample;
 export const uploadVoiceSample = supabaseService.uploadAudioSample;
+export const cloneVoice = blandAiService.cloneVoice;
 
 // --- CALL LOGS ---
 export async function getCallLogs(): Promise<CallLog[]> {

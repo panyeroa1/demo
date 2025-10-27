@@ -1,6 +1,8 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MicIcon, StopIcon, RefreshIcon, CheckCircleIcon } from './icons';
+import * as dataService from '../services/dataService';
 
 type RecordingStatus = 'idle' | 'permission' | 'recording' | 'recorded' | 'cloning' | 'success' | 'error';
 
@@ -9,6 +11,7 @@ const CloneVoiceView: React.FC = () => {
     const [voiceName, setVoiceName] = useState('');
     const [status, setStatus] = useState<RecordingStatus>('idle');
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -47,6 +50,7 @@ const CloneVoiceView: React.FC = () => {
 
             mediaRecorderRef.current.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                setAudioBlob(audioBlob);
                 const url = URL.createObjectURL(audioBlob);
                 setAudioUrl(url);
                 setStatus('recorded');
@@ -70,6 +74,7 @@ const CloneVoiceView: React.FC = () => {
 
     const handleReset = () => {
         setAudioUrl(null);
+        setAudioBlob(null);
         setStatus('idle');
         setErrorMessage('');
         setVoiceName('');
@@ -78,15 +83,35 @@ const CloneVoiceView: React.FC = () => {
         }
     };
     
-    const handleClone = () => {
+    const handleClone = async () => {
+        if (!audioBlob) {
+            setErrorMessage("No audio has been recorded.");
+            setStatus('error');
+            return;
+        }
+        if (!voiceName.trim()) {
+            setErrorMessage("Please provide a name for your voice.");
+            setStatus('error');
+            return;
+        }
+
         setStatus('cloning');
-        // Simulate API call for voice cloning
-        setTimeout(() => {
-            setStatus('success');
-        }, 3000);
+        setErrorMessage('');
+
+        try {
+            const result = await dataService.cloneVoice(voiceName, audioBlob);
+            if (result.success) {
+                setStatus('success');
+            } else {
+                throw new Error(result.message || 'Cloning failed for an unknown reason.');
+            }
+        } catch (err: any) {
+            setErrorMessage(err.message);
+            setStatus('error');
+        }
     };
 
-    const canClone = voiceName.trim() !== '' && status === 'recorded';
+    const canClone = voiceName.trim() !== '' && status === 'recorded' && !!audioBlob;
 
     const renderStatusUI = () => {
         switch (status) {

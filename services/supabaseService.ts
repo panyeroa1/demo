@@ -18,7 +18,7 @@ export const getAgentsFromSupabase = async (): Promise<Agent[]> => {
         name: agent.name,
         description: agent.description || '', // Fallback for missing column
         voice: agent.voice,
-        systemPrompt: agent.system_prompt,
+        systemPrompt: agent.task, // FIX: Changed from system_prompt to task
         firstSentence: 'Hello, how can I assist you?', // Provide a default as the DB column is missing
         thinkingMode: agent.thinking_mode,
         avatarUrl: null, // The 'avatar_url' column does not exist in the schema.
@@ -33,7 +33,7 @@ export const upsertAgentsToSupabase = async (agents: Agent[]) => {
         const { systemPrompt, firstSentence, thinkingMode, avatarUrl, ...rest } = agent;
         return {
             ...rest, // includes id, name, description, voice, tools
-            system_prompt: systemPrompt,
+            task: systemPrompt, // FIX: Changed from system_prompt to task
             thinking_mode: thinkingMode,
             // avatar_url is removed as the column does not exist.
         };
@@ -52,7 +52,7 @@ export const updateAgentInSupabase = async (agent: Agent) => {
     const { id, systemPrompt, firstSentence, thinkingMode, avatarUrl, ...rest } = agent;
     const updatePayload = {
         ...rest, // includes name, description, voice, tools
-        system_prompt: systemPrompt,
+        task: systemPrompt, // FIX: Changed from system_prompt to task
         thinking_mode: thinkingMode,
         // avatar_url is removed as the column does not exist.
     };
