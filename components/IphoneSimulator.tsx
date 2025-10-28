@@ -42,7 +42,6 @@ const Dialer: React.FC = () => {
                  <img src="https://eburon.ai/assets/icon-eburon.png" alt="Eburon Logo" class="h-8 w-8" />
                 <h1 class="text-2xl font-bold text-eburon-accent">Eburon Dialer</h1>
             </div>
-            <p class="text-eburon-fg/60">AI-Powered Outbound Calls</p>
         </div>
 
         <!-- Status Display -->

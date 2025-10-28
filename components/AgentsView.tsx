@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Agent, Voice } from '../types';
 import * as dataService from '../services/dataService';
-import { AgentIcon, PlusIcon, SaveIcon, PlayIcon, PauseIcon, CheckCircleIcon, Trash2Icon, ChevronLeftIcon } from './icons';
+import { AgentIcon, PlusIcon, SaveIcon, PlayIcon, PauseIcon, CheckCircleIcon, Trash2Icon, ChevronLeftIcon, HelpCircleIcon } from './icons';
 import { LoadingIndicator } from './LoadingIndicator';
 import { VOICE_PREVIEW_CONFIG } from '../constants';
 
@@ -185,7 +185,7 @@ const AgentsView: React.FC = () => {
                 <div className="flex justify-between items-start gap-4 mb-6">
                     <button onClick={handleBackToList} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-eburon-panel transition-colors -ml-3">
                         <ChevronLeftIcon className="w-5 h-5" />
-                        <span className="font-semibold">Back to Agents</span>
+                        <span className="font-semibold">Back</span>
                     </button>
                     <div className="flex items-center gap-2 flex-shrink-0">
                         {!selectedAgent.id.startsWith('new-agent-') && (
@@ -251,37 +251,53 @@ const AgentsView: React.FC = () => {
                     </div>
                     
                     <div>
-                        <label htmlFor="systemPrompt" className="block text-sm font-medium text-eburon-fg/80 mb-1">System Prompt</label>
-                        <textarea id="systemPrompt" rows={15} value={selectedAgent.systemPrompt} onChange={e => handleUpdateSelectedAgent('systemPrompt', e.target.value)} className="w-full bg-eburon-panel border border-eburon-border rounded-lg p-2.5 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-eburon-accent" placeholder="Define the agent's personality, instructions, and goals."></textarea>
+                        <label htmlFor="systemPrompt" className="flex items-center gap-2 text-sm font-medium text-eburon-fg/80 mb-1">
+                            <span>System Prompt</span>
+                            <div className="relative group">
+                                <HelpCircleIcon className="w-4 h-4 text-eburon-fg/50 cursor-help" />
+                                {/* FIX: Corrected corrupted div from file concatenation error */}
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 p-2 bg-eburon-bg border border-eburon-border rounded-lg text-xs text-eburon-fg/80 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    The core instructions for the AI agent. Define its personality, goals, and constraints here.
+                                </div>
+                            </div>
+                        </label>
+                        <textarea id="systemPrompt" value={selectedAgent.systemPrompt} onChange={e => handleUpdateSelectedAgent('systemPrompt', e.target.value)} rows={12} className="w-full bg-eburon-panel border border-eburon-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-eburon-accent font-mono text-sm"></textarea>
                     </div>
                 </div>
             </div>
-        )
+        );
     }
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-eburon-border flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Agents</h1>
-                <button onClick={handleCreateNewAgent} className="p-2 rounded-lg bg-eburon-accent hover:bg-eburon-accent-dark text-white">
+        <div className="p-8 h-full overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold text-eburon-fg">Agents</h1>
+                    <p className="text-eburon-fg/70">Manage your library of AI agents.</p>
+                </div>
+                <button
+                    onClick={handleCreateNewAgent}
+                    className="bg-eburon-accent hover:bg-eburon-accent-dark text-white font-bold py-3 px-6 rounded-lg transition-colors duration-150 flex items-center gap-2"
+                >
                     <PlusIcon className="w-6 h-6" />
+                    <span>New Agent</span>
                 </button>
             </div>
-            <div className="flex-grow overflow-y-auto">
-                {error && <div className="p-4 text-center text-red-400">{error}</div>}
+            
+            {error && <div className="p-4 text-center text-red-400 bg-red-900/50 border border-red-500 rounded-lg mb-4">{error}</div>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {agents.map(agent => (
                     <button
                         key={agent.id}
                         onClick={() => handleSelectAgent(agent)}
-                        className={`w-full text-left p-4 border-b border-eburon-border hover:bg-eburon-panel transition-colors flex items-center gap-4`}
+                        className="bg-eburon-panel p-6 rounded-xl border border-eburon-border text-left hover:border-eburon-accent hover:bg-eburon-accent/10 transition-all duration-200 group flex flex-col"
                     >
-                        <div className="w-12 h-12 rounded-full bg-eburon-panel grid place-items-center flex-shrink-0">
-                            <AgentIcon className="w-7 h-7 text-eburon-accent" />
+                        <div className="w-14 h-14 rounded-full bg-eburon-bg grid place-items-center mb-4 group-hover:bg-eburon-accent transition-colors">
+                            <AgentIcon className="w-8 h-8 text-eburon-accent group-hover:text-white transition-colors" />
                         </div>
-                        <div>
-                            <h3 className="font-semibold text-eburon-fg">{agent.name}</h3>
-                            <p className="text-sm text-eburon-fg/70 truncate">{agent.description || 'No description'}</p>
-                        </div>
+                        <h2 className="text-xl font-semibold text-eburon-fg">{agent.name}</h2>
+                        <p className="text-sm text-eburon-fg/70 flex-grow">{agent.description}</p>
                     </button>
                 ))}
             </div>

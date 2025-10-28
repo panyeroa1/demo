@@ -287,16 +287,21 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
                             {msg.role === 'model' && msg.telemetry && (
                                 <div className="mt-3 pt-3 border-t border-white/10">
                                     <pre className="bg-eburon-bg/50 p-3 rounded-md text-xs text-eburon-fg/70 font-mono whitespace-pre-wrap overflow-x-auto">
-                                        {`Role:           Chatbot\nTokens Used:    ${msg.telemetry.tokensUsed}\nWords/sec:      ${msg.telemetry.wps}\nChars/sec:      ${msg.telemetry.cps}\nEnergy (est.):  ${msg.telemetry.energy}`}
+{`Chatbot: Eburon Assistant
+Tokens:  ${msg.telemetry.tokensUsed}
+WPS:     ${msg.telemetry.wps}
+CPS:     ${msg.telemetry.cps}
+Energy:  ${msg.telemetry.energy}`}
                                     </pre>
                                 </div>
                             )}
                         </div>
-                        {msg.role === 'model' && msg.text && (
+                        {msg.role === 'model' && (
                             <div className="flex-shrink-0 self-center">
                                 <button
                                     onClick={() => handleCopy(msg.text, msg.id)}
-                                    className="p-2 rounded-lg text-eburon-fg/60 hover:text-eburon-fg hover:bg-white/10 transition-colors"
+                                    disabled={!msg.text}
+                                    className="p-2 rounded-lg text-eburon-fg/60 hover:text-eburon-fg hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Copy response"
                                 >
                                     {copiedMessageId === msg.id ? (
