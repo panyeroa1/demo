@@ -34,6 +34,7 @@ export interface TelemetryData {
   tokensUsed?: number;
   energy?: string;
   wps?: number;
+  cps?: number;
 }
 
 export interface ChatMessage {

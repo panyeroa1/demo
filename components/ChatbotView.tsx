@@ -3,7 +3,7 @@ import { ChatMessage, GroundingChunk, TelemetryData } from '../types';
 import { sendMessageStreamToGemini, generateImageWithGemini } from '../services/geminiService';
 import * as dataService from '../services/dataService';
 import { uploadChatImage } from '../services/supabaseService';
-import { SendIcon, PaperclipIcon, SearchIcon, CodeIcon, Trash2Icon } from './icons';
+import { SendIcon, PaperclipIcon, SearchIcon, CodeIcon, Trash2Icon, CopyIcon, CheckCircleIcon } from './icons';
 import { EBURON_SYSTEM_PROMPT } from '../constants';
 
 interface ChatbotViewProps {
@@ -41,6 +41,7 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [useSearchGrounding, setUseSearchGrounding] = useState(false);
     const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,15 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
             setIsHistoryLoading(false);
         };
         loadHistory();
+    }, []);
+
+    const handleCopy = useCallback((text: string, messageId: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setCopiedMessageId(messageId);
+            setTimeout(() => setCopiedMessageId(null), 2000);
+        }).catch(err => {
+            console.error('Failed to copy response:', err);
+        });
     }, []);
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,9 +175,11 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
             const endTime = performance.now();
             const durationSeconds = (endTime - startTime) / 1000;
             const words = fullText.trim().split(/\s+/).filter(Boolean).length;
+            const characters = fullText.length;
             const wps = durationSeconds > 0 ? Math.round(words / durationSeconds) : 0;
-            const energy = ((fullText.length / 1000) * 0.005).toFixed(4);
-            const tokensUsed = Math.round(fullText.length / 3.8);
+            const cps = durationSeconds > 0 ? Math.round(characters / durationSeconds) : 0;
+            const energy = ((characters / 1000) * 0.005).toFixed(4);
+            const tokensUsed = Math.round(characters / 3.8);
 
             const finalModelMessage: ChatMessage = {
                 ...modelMessagePlaceholder,
@@ -176,7 +188,8 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
                 telemetry: {
                     tokensUsed,
                     energy: `${energy} kWh`,
-                    wps
+                    wps,
+                    cps
                 }
             };
             
@@ -272,13 +285,28 @@ const ChatbotView: React.FC<ChatbotViewProps> = ({ setGeneratedAppHtml }) => {
                             )}
 
                             {msg.role === 'model' && msg.telemetry && (
-                                <div className="mt-3 pt-2 border-t border-white/10 flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px] text-eburon-fg/50 font-mono">
-                                    <span>Tokens: {msg.telemetry.tokensUsed}</span>
-                                    <span>Energy: {msg.telemetry.energy}</span>
-                                    <span>WPS: {msg.telemetry.wps}</span>
+                                <div className="mt-3 pt-3 border-t border-white/10">
+                                    <pre className="bg-eburon-bg/50 p-3 rounded-md text-xs text-eburon-fg/70 font-mono whitespace-pre-wrap overflow-x-auto">
+                                        {`Role:           Chatbot\nTokens Used:    ${msg.telemetry.tokensUsed}\nWords/sec:      ${msg.telemetry.wps}\nChars/sec:      ${msg.telemetry.cps}\nEnergy (est.):  ${msg.telemetry.energy}`}
+                                    </pre>
                                 </div>
                             )}
                         </div>
+                        {msg.role === 'model' && msg.text && (
+                            <div className="flex-shrink-0 self-center">
+                                <button
+                                    onClick={() => handleCopy(msg.text, msg.id)}
+                                    className="p-2 rounded-lg text-eburon-fg/60 hover:text-eburon-fg hover:bg-white/10 transition-colors"
+                                    title="Copy response"
+                                >
+                                    {copiedMessageId === msg.id ? (
+                                        <CheckCircleIcon className="w-5 h-5 text-eburon-ok" />
+                                    ) : (
+                                        <CopyIcon className="w-5 h-5" />
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ))}
                 <div ref={messagesEndRef} />

@@ -3,13 +3,13 @@ import { ActiveView } from '../types';
 import { MOCK_TEMPLATES } from '../constants';
 import { LoadingIndicator } from './LoadingIndicator';
 
-// Lazy load the main view components
-const ChatbotView = React.lazy(() => import('./ChatbotView'));
-const AgentsView = React.lazy(() => import('./AgentsView'));
-const VoicesView = React.lazy(() => import('./VoicesView'));
-const CallLogsView = React.lazy(() => import('./CallLogsView'));
-const TTSStudioView = React.lazy(() => import('./TTSStudioView'));
-const ActiveCallView = React.lazy(() => import('./ActiveCallView'));
+// Direct import components to fix dynamic loading issue
+import ChatbotView from './ChatbotView';
+import AgentsView from './AgentsView';
+import VoicesView from './VoicesView';
+import CallLogsView from './CallLogsView';
+import TTSStudioView from './TTSStudioView';
+import ActiveCallView from './ActiveCallView';
 
 
 interface CenterPanelProps {
